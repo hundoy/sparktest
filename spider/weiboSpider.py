@@ -5,8 +5,9 @@ import os
 import re
 import sys
 import traceback
-from datetime import datetime, time
+from datetime import datetime
 from datetime import timedelta
+import time
 
 import requests
 from lxml import etree
@@ -275,9 +276,6 @@ def save_image(url, filePath):
             handle.write(block)
 
 
-cookie = {"Cookie": "ALF=1519909430; SCF=Ag7WAWXq6Zx_fi-6imcy2besbl_eO4pJnIOFELxCLWlV_5Q8_9OuNpb9w4wkaN53s_9s0zr-YZebui3W0dOUW2E.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhvQRSX9UM3aV-rOEsh7Dph5JpX5K-hUgL.FozReo-N1Ke7Soe2dJLoIpYLxKnL12BLBoMLxKBLB.eL122LxKqL1KnL12HkeKn4; SUB=_2A253dA1RDeThGeRG6VcW-S3MzT-IHXVUlpMZrDV6PUJbkdANLXHmkW1NTczUO0H0LINW09hWYCnFL_w_Dqk_ZmOI; SUHB=0V51bfV43P_0rp; SSOLoginState=1517321489"}  # 将your cookie替换成自己的cookie
-
-
 def save_txt(txt, filePath):
     with open(filePath, 'w') as of:
         of.write(txt.encode('utf-8'))
@@ -297,70 +295,110 @@ def get_data(url):
         print "error: ", e
         return {}
 
+def save_block(pid, arr, file_path, kname):
+    bid = (pid - 1) / PAGE_BLOCK + 1
+    save_txt_add("%s_%d:%s\n" % (kname, bid, ",".join(arr)), file_path)
+    del arr[:]
+    print("%s block %d saved." % (kname, bid))
+
+# prepare
+MAX_RETRY = 3
+PAGE_BLOCK = 5
+FAULT_TORL = 3
+base_dir = "D:/work/spider/kemowb/"
+head_dir = base_dir + "heads/"
+info_dir = base_dir + "infos/"
+cookie = {"Cookie": "ALF=1519909430; SCF=Ag7WAWXq6Zx_fi-6imcy2besbl_eO4pJnIOFELxCLWlV_5Q8_9OuNpb9w4wkaN53s_9s0zr-YZebui3W0dOUW2E.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhvQRSX9UM3aV-rOEsh7Dph5JpX5K-hUgL.FozReo-N1Ke7Soe2dJLoIpYLxKnL12BLBoMLxKBLB.eL122LxKqL1KnL12HkeKn4; SUB=_2A253dA1RDeThGeRG6VcW-S3MzT-IHXVUlpMZrDV6PUJbkdANLXHmkW1NTczUO0H0LINW09hWYCnFL_w_Dqk_ZmOI; SUHB=0V51bfV43P_0rp; SSOLoginState=1517321489"}  # 将your cookie替换成自己的cookie
 
 if __name__ == "__main__":
-    # prepare
-    base_dir = "D:/work/spider/kemowb/"
-    head_dir = base_dir + "heads/"
-    info_dir = base_dir + "infos/"
-
     # choose one user
-    uid = 1878650541
-    print("start catch user %d ..." % uid)
-    info_file_path = "%s%d.txt"
+    uid = "1878650541"
+    print("start catch user %s ..." % uid)
+    info_file_path = "%s%s.txt" % (info_dir, uid)
 
     # get his nickname and avatar
     # https://m.weibo.cn/api/container/getIndex?type=uid&value=1878650541&containerid=1005051878650541
     # $.data.userInfo.avatar_hd
     # $.data.userInfo.screen_name
-    user_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%d&containerid=100505%d" % (uid, uid))
+    user_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=100505%s" % (uid, uid))
     nick_name = ""
     if "data" in user_info:
         hear_url = user_info["data"]["userInfo"]["avatar_hd"]
         nick_name = user_info["data"]["userInfo"]["screen_name"]
-        save_image(hear_url, "%s%d.jpg"% (head_dir, uid))
-        print("user %d %s head pic saved." % (uid, nick_name))
-        txt = "uid:%d\n" % uid
+        save_image(hear_url, "%s%s.jpg"% (head_dir, uid))
+        print("user %s %s head pic saved." % (uid, nick_name))
+        txt = "uid:%s\n" % uid
         txt += "nick_name:%s\n" % nick_name
-        save_txt(txt, info_file_path  % (info_dir, uid))
+        save_txt(txt, info_file_path)
     else:
-        print("[WARN] when get user %d, you get a empty user info..." % uid)
+        print("[WARN] when get user %s, you get a empty user info..." % uid)
+
+
+    # get his recently one month original po's WBID
+    # https://m.weibo.cn/api/container/getIndex?type=uid&value=1428162532&containerid=107603 1428162532&page=4
+    # $.data.cardlistInfo.cards[i].mblog.created_at 时间（可能是字符）
+    # $.data.cardlistInfo.cards[i].mblog.id  wb_detail_id
+    # $.data.cardlistInfo.cards[i].mblog.retweeted_status  这个数组存在表示是retweet
+
+
+
+    # get all the attitude, retweet, comments UID in each po
 
     # get all his fans' UID
     # https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_1878650541&since_id=2
     # $.data.cards[i].card_type=11 this is filter
     # $.data.cards[i].card_group[i] every person
     # $.data.cards[i].card_group[i].user.id UID or fans
-    pid = 1
-    fan_uids = []
-    while True:
-        print("fan page %d" % pid)
-        fan_info = get_data("https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_%d&since_id=%d" % (uid, pid))
-        if "data" in fan_info:
-            for card in fan_info["data"]["cards"]:
-                if card["card_type"] != 11:
-                    continue
-
-                for card_group in card["card_group"]:
-                    fan_uid = card_group["user"]["id"]
-                    if fan_uid not in fan_uids:
-                        fan_uids.append(fan_uid)
-            pid+=1
-        else:
-            print("get %d fans fin. at page %d" % (uid, pid))
-            fan_uids_str = ",".join(fan_uids)
-            txt = "fans:%s\n" % fan_uids_str
-            save_txt_add(txt, info_file_path)
-            print("fan info saved.")
-            break
-
-        time.sleep(2)
-
-
-    # get all his followers' UID
-
-    # get his recently one month original po's WBID
-
-    # get all the attitude, retweet, comments UID in each po
-
+    # pid = 1
+    # fan_uids = []
+    # fault_time = 0
+    # while True:
+    #     load_success = True
+    #
+    #     # load page content
+    #     fan_info = get_data("https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_%s&since_id=%d" % (uid, pid))
+    #
+    #     # when load fail, wait 5s and retry
+    #     retry_time = 0
+    #     while "data" not in fan_info or "cards" not in fan_info["data"] or len(fan_info["data"]["cards"])==0:
+    #         time.sleep(5)
+    #         fan_info = get_data("https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_%s&since_id=%d" % (uid, pid))
+    #         retry_time+=1
+    #         if retry_time > MAX_RETRY:
+    #             print("[WARN]user %s fan page %d is empty!" % (uid, pid))
+    #             load_success = False
+    #             break
+    #
+    #     # get info start
+    #     if load_success:
+    #         fault_time = 0
+    #         for card in fan_info["data"]["cards"]:
+    #             # filter
+    #             if card["card_type"] != 11:
+    #                 continue
+    #             for card_group in card["card_group"]:
+    #                 fan_uid = str(card_group["user"]["id"])
+    #                 if fan_uid not in fan_uids:
+    #                     fan_uids.append(fan_uid)
+    #                     # print("add fan uid %s" % fan_uid)
+    #
+    #         pid+=1
+    #
+    #         # when reach block, save to file
+    #         if pid%PAGE_BLOCK==0:
+    #             save_block(pid, fan_uids, info_file_path, "fan")
+    #
+    #     else:
+    #         # when continuous fault time more than max fault tolerant time, end loop
+    #         fault_time += 1
+    #         if fault_time > FAULT_TORL:
+    #             if len(fan_uids)>0:
+    #                 save_block(pid, fan_uids, info_file_path, "fan")
+    #
+    #             print("get %s fans fin. at page %d" % (uid, pid))
+    #             break
+    #         else:
+    #             time.sleep(10)
+    #
+    #     time.sleep(2)
 

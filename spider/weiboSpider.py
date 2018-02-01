@@ -301,6 +301,9 @@ def save_block(pid, arr, file_path, kname):
     del arr[:]
     print("%s block %d saved." % (kname, bid))
 
+def is_index_valid(index_info):
+    return "data" in index_info and "cardlistInfo" in index_info["data"] and "cards" in index_info["data"]["cardlistInfo"] and len(index_info["data"]["cardlistInfo"]["cards"])>0
+
 # prepare
 MAX_RETRY = 3
 PAGE_BLOCK = 5
@@ -339,8 +342,53 @@ if __name__ == "__main__":
     # $.data.cardlistInfo.cards[i].mblog.created_at 时间（可能是字符）
     # $.data.cardlistInfo.cards[i].mblog.id  wb_detail_id
     # $.data.cardlistInfo.cards[i].mblog.retweeted_status  这个数组存在表示是retweet
+    pid = 1
+    wbids = []
+    fault_time = 0
+    while True:
+        load_success = True
 
+        # load page content
+        index_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (uid, uid, pid))
 
+        # when load fail, wait 5s and retry
+        retry_time = 0
+        while not is_index_valid(index_info):
+            time.sleep(5)
+            index_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (uid, uid, pid))
+            retry_time += 1
+            if retry_time > MAX_RETRY:
+                print("[WARN]user %s index page %d is empty!" % (uid, pid))
+                load_success = False
+                break
+
+        # get info start
+        if load_success:
+            fault_time = 0
+            for card in index_info.data.cardlistInfo.cards:
+                # filter
+                if "retweeted_status" in card or "mblog" not in card:
+                    continue
+
+                create_at = card.mblog.created_at
+                wbid = card.mblog.id
+                wbids.append(wbid)
+            pid+=1
+
+            # reach block
+            if pid % PAGE_BLOCK == 0:
+                save_block(pid, wbids, info_file_path, "wb")
+        else:
+            # when continuous fault time more than max fault tolerant time, end loop
+            fault_time += 1
+            if fault_time > FAULT_TORL:
+                if len(wbids)>0:
+                    save_block(pid, wbids, info_file_path, "wb")
+
+                print("get %s wb fin. at page %d" % (uid, pid))
+                break
+            else:
+                time.sleep(10)
 
     # get all the attitude, retweet, comments UID in each po
 

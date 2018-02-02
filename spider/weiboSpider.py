@@ -453,20 +453,43 @@ def get_some_detail_uids(type_name, detail, wbid, uid):
 
 
 def get_detail_info(uid, info_file_path):
+    # 1. load info file via uid.
+    # 2. get wb_N, all the wbid.
+    # 3. get last line's wbid, know current index.
+    # 4. continue to catch wbid from current index.
+    cur_i = 0
+    wbids = []
     with open(info_file_path) as info_file:
-        pass
+        lines = info_file.readlines()
+        for line in lines:
+            if line.startswith("wb_"):
+                right = line.split(":")[1]
+                wbids+=right.split(",")
+            elif line.startswith("{"):
+                break
+        last_line = lines[-1]
+        if last_line.startswith("{"):
+            wb_detail = json.loads(last_line)
+            cur_wbid = wb_detail["wbid"].encode("utf-8")
+            cur_i = wbids.index(cur_wbid)
+            cur_i+=1
 
-    wbid = "4201908917042237"
+    while cur_i<len(wbids):
+        # wbid = "4201908917042237"
+        wbid = wbids[cur_i]
 
-    detail = {"wbid": wbid}
+        detail = {"wbid": wbid}
+        get_some_detail_uids("comment", detail, wbid, uid)
+        get_some_detail_uids("repost", detail, wbid, uid)
+        get_some_detail_uids("like", detail, wbid, uid)
 
-    get_some_detail_uids("comment", detail, wbid, uid)
-    get_some_detail_uids("repost", detail, wbid, uid)
-    get_some_detail_uids("like", detail, wbid, uid)
+        save_txt_add(json.dumps(detail)+"\n", info_file_path)
 
-    save_txt_add(json.dumps(detail), info_file_path)
+        print("user %s 's wb %s saved." % (uid, wbid))
 
-    print("user %s 's wb %s saved." % (uid, wbid))
+        cur_i+=1
+
+    print("fin catch all the detail!")
 
 
 # prepare

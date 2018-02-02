@@ -476,7 +476,7 @@ def get_detail_info(uid, info_file_path):
 
     while cur_i<len(wbids):
         # wbid = "4201908917042237"
-        wbid = wbids[cur_i]
+        wbid = wbids[cur_i].strip()
 
         detail = {"wbid": wbid}
         get_some_detail_uids("comment", detail, wbid, uid)

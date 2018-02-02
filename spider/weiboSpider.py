@@ -295,19 +295,189 @@ def get_data(url):
         print "error: ", e
         return {}
 
+
 def save_block(pid, arr, file_path, kname):
     bid = (pid - 1) / PAGE_BLOCK + 1
     save_txt_add("%s_%d:%s\n" % (kname, bid, ",".join(arr)), file_path)
     del arr[:]
     print("%s block %d saved." % (kname, bid))
 
+
 def is_index_valid(index_info):
-    return "data" in index_info and "cardlistInfo" in index_info["data"] and "cards" in index_info["data"]["cardlistInfo"] and len(index_info["data"]["cardlistInfo"]["cards"])>0
+    # $.data.cards[字符串00,01].mblog.id  wb_detail_id
+    return "data" in index_info and "cards" in index_info["data"] and len(index_info["data"]["cards"])>0
+
+
+def get_user_info(uid, info_file_path):
+    # get his nickname and avatar
+    # https://m.weibo.cn/api/container/getIndex?type=uid&value=1878650541&containerid=1005051878650541
+    # $.data.userInfo.avatar_hd
+    # $.data.userInfo.screen_name
+    user_info = get_data(
+        "https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=100505%s" % (uid, uid))
+    nick_name = ""
+    if "data" in user_info:
+        head_url = user_info["data"]["userInfo"]["avatar_hd"]
+        nick_name = user_info["data"]["userInfo"]["screen_name"]
+        save_image(head_url, "%s%s.jpg" % (head_dir, uid))
+        print("user %s %s head pic saved." % (uid, nick_name))
+        txt = "uid:%s\n" % uid
+        txt += "nick_name:%s\n" % nick_name
+        save_txt(txt, info_file_path)
+    else:
+        print("[WARN] when get user %s, you get a empty user info..." % uid)
+
+
+def get_index_info(uid, info_file_path):
+    # get his recently one month original po's WBID
+    # https://m.weibo.cn/api/container/getIndex?type=uid&value=1428162532&containerid=107603 1428162532&page=4
+    # $.data.cards[字符串00,01].mblog.created_at 时间（可能是字符）
+    # $.data.cards[字符串00,01].mblog.id  wb_detail_id
+    # $.data.cards[字符串00,01].mblog.retweeted_status 这个数组存在表示是retweet
+    pid = 1
+    wbids = []
+    fault_time = 0
+    while True:
+        # wait some time, i am a person, i need rest
+        time.sleep(2)
+
+        load_success = True
+        reach_time = False
+
+        # load page content
+        index_info = get_data(
+            "https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (
+            uid, uid, pid))
+
+        # when load fail, wait 5s and retry
+        retry_time = 0
+        while not is_index_valid(index_info):
+            time.sleep(5)
+            index_info = get_data(
+                "https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (
+                uid, uid, pid))
+            retry_time += 1
+            if retry_time > MAX_RETRY:
+                print("[WARN]user %s index page %d is empty!" % (uid, pid))
+                load_success = False
+                break
+
+        # get info start
+        if load_success:
+            fault_time = 0
+            for card_i in range(0, len(index_info["data"]["cards"])):
+                card = index_info["data"]["cards"][card_i]
+                # filter
+                if "mblog" not in card or "retweeted_status" in card["mblog"]:
+                    continue
+
+                create_at = card["mblog"]["created_at"]
+                wbid = card["mblog"]["id"]
+
+                if create_at.startswith(u"2017-"):
+                    reach_time = True
+                    break
+
+                wbids.append(wbid)
+
+            if reach_time: break
+
+            pid += 1
+
+            # reach block
+            if pid % PAGE_BLOCK == 0:
+                save_block(pid, wbids, info_file_path, "wb")
+        else:
+            # when continuous fault time more than max fault tolerant time, end loop
+            fault_time += 1
+            if fault_time > FAULT_TORL:
+                break
+            else:
+                time.sleep(10)
+
+    # final save block
+    if len(wbids) > 0:
+        save_block(pid, wbids, info_file_path, "wb")
+
+    print("get %s wb fin. at page %d" % (uid, pid))
+
+
+def is_detail_valid(info):
+    # $.data.data[i].user.id
+    return "data" in info and "data" in info["data"] and len(info["data"]["data"])>0
+
+
+def is_detail_no_data(info):
+    return "msg" in info and info["msg"]==u"暂无数据"
+
+
+def get_some_detail_uids(type_name, detail, wbid, uid):
+    pid = 1
+    uids = []
+    fault_time = 0
+    while True:
+        time.sleep(2)
+        load_success = True
+        some_info = get_data(TYPE_URL[type_name] % (wbid, pid))
+        if is_detail_no_data(some_info):
+            fault_time += 1
+            if fault_time > FAULT_TORL: break;
+            continue
+
+        # when load fail, wait 5s and retry
+        retry_time = 0
+        while not is_detail_valid(some_info):
+            time.sleep(5)
+            some_info = get_data(TYPE_URL[type_name] % (wbid, pid))
+            retry_time += 1
+            if retry_time > MAX_RETRY:
+                print("[WARN]user %s %s page %d is empty!" % (uid, type_name, pid))
+                load_success = False
+                break
+
+        if load_success:
+            fault_time = 0
+            for data in some_info["data"]["data"]:
+                other_uid = data["user"]["id"]
+                uids.append(other_uid)
+
+            pid += 1
+        else:
+            fault_time += 1
+            if fault_time > FAULT_TORL:
+                break;
+            time.sleep(5)
+
+    # finally append
+    detail[type_name] = uids
+
+
+def get_detail_info(uid, info_file_path):
+    with open(info_file_path) as info_file:
+        pass
+
+    wbid = "4201908917042237"
+
+    detail = {"wbid": wbid}
+
+    get_some_detail_uids("comment", detail, wbid, uid)
+    get_some_detail_uids("repost", detail, wbid, uid)
+    get_some_detail_uids("like", detail, wbid, uid)
+
+    save_txt_add(json.dumps(detail), info_file_path)
+
+    print("user %s 's wb %s saved." % (uid, wbid))
+
 
 # prepare
 MAX_RETRY = 3
 PAGE_BLOCK = 5
-FAULT_TORL = 3
+FAULT_TORL = 1
+TYPE_URL = {
+    "comment" : "https://m.weibo.cn/api/comments/show?id=%s&page=%d",
+    "repost" : "https://m.weibo.cn/api/statuses/repostTimeline?id=%s&page=%d",
+    "like" : "https://m.weibo.cn/api/attitudes/show?id=%s&page=%d"
+}
 base_dir = "D:/work/spider/kemowb/"
 head_dir = base_dir + "heads/"
 info_dir = base_dir + "infos/"
@@ -319,134 +489,9 @@ if __name__ == "__main__":
     print("start catch user %s ..." % uid)
     info_file_path = "%s%s.txt" % (info_dir, uid)
 
-    # get his nickname and avatar
-    # https://m.weibo.cn/api/container/getIndex?type=uid&value=1878650541&containerid=1005051878650541
-    # $.data.userInfo.avatar_hd
-    # $.data.userInfo.screen_name
-    user_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=100505%s" % (uid, uid))
-    nick_name = ""
-    if "data" in user_info:
-        hear_url = user_info["data"]["userInfo"]["avatar_hd"]
-        nick_name = user_info["data"]["userInfo"]["screen_name"]
-        save_image(hear_url, "%s%s.jpg"% (head_dir, uid))
-        print("user %s %s head pic saved." % (uid, nick_name))
-        txt = "uid:%s\n" % uid
-        txt += "nick_name:%s\n" % nick_name
-        save_txt(txt, info_file_path)
-    else:
-        print("[WARN] when get user %s, you get a empty user info..." % uid)
+    # get_user_info(uid, info_file_path)
+    # get_index_info(uid, info_file_path)
+    get_detail_info(uid, info_file_path)
 
 
-    # get his recently one month original po's WBID
-    # https://m.weibo.cn/api/container/getIndex?type=uid&value=1428162532&containerid=107603 1428162532&page=4
-    # $.data.cardlistInfo.cards[i].mblog.created_at 时间（可能是字符）
-    # $.data.cardlistInfo.cards[i].mblog.id  wb_detail_id
-    # $.data.cardlistInfo.cards[i].mblog.retweeted_status  这个数组存在表示是retweet
-    pid = 1
-    wbids = []
-    fault_time = 0
-    while True:
-        load_success = True
-
-        # load page content
-        index_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (uid, uid, pid))
-
-        # when load fail, wait 5s and retry
-        retry_time = 0
-        while not is_index_valid(index_info):
-            time.sleep(5)
-            index_info = get_data("https://m.weibo.cn/api/container/getIndex?type=uid&value=%s&containerid=107603%s&page=%d" % (uid, uid, pid))
-            retry_time += 1
-            if retry_time > MAX_RETRY:
-                print("[WARN]user %s index page %d is empty!" % (uid, pid))
-                load_success = False
-                break
-
-        # get info start
-        if load_success:
-            fault_time = 0
-            for card in index_info.data.cardlistInfo.cards:
-                # filter
-                if "retweeted_status" in card or "mblog" not in card:
-                    continue
-
-                create_at = card.mblog.created_at
-                wbid = card.mblog.id
-                wbids.append(wbid)
-            pid+=1
-
-            # reach block
-            if pid % PAGE_BLOCK == 0:
-                save_block(pid, wbids, info_file_path, "wb")
-        else:
-            # when continuous fault time more than max fault tolerant time, end loop
-            fault_time += 1
-            if fault_time > FAULT_TORL:
-                if len(wbids)>0:
-                    save_block(pid, wbids, info_file_path, "wb")
-
-                print("get %s wb fin. at page %d" % (uid, pid))
-                break
-            else:
-                time.sleep(10)
-
-    # get all the attitude, retweet, comments UID in each po
-
-    # get all his fans' UID
-    # https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_1878650541&since_id=2
-    # $.data.cards[i].card_type=11 this is filter
-    # $.data.cards[i].card_group[i] every person
-    # $.data.cards[i].card_group[i].user.id UID or fans
-    # pid = 1
-    # fan_uids = []
-    # fault_time = 0
-    # while True:
-    #     load_success = True
-    #
-    #     # load page content
-    #     fan_info = get_data("https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_%s&since_id=%d" % (uid, pid))
-    #
-    #     # when load fail, wait 5s and retry
-    #     retry_time = 0
-    #     while "data" not in fan_info or "cards" not in fan_info["data"] or len(fan_info["data"]["cards"])==0:
-    #         time.sleep(5)
-    #         fan_info = get_data("https://m.weibo.cn/api/container/getIndex?containerid=231051_-_fans_-_%s&since_id=%d" % (uid, pid))
-    #         retry_time+=1
-    #         if retry_time > MAX_RETRY:
-    #             print("[WARN]user %s fan page %d is empty!" % (uid, pid))
-    #             load_success = False
-    #             break
-    #
-    #     # get info start
-    #     if load_success:
-    #         fault_time = 0
-    #         for card in fan_info["data"]["cards"]:
-    #             # filter
-    #             if card["card_type"] != 11:
-    #                 continue
-    #             for card_group in card["card_group"]:
-    #                 fan_uid = str(card_group["user"]["id"])
-    #                 if fan_uid not in fan_uids:
-    #                     fan_uids.append(fan_uid)
-    #                     # print("add fan uid %s" % fan_uid)
-    #
-    #         pid+=1
-    #
-    #         # when reach block, save to file
-    #         if pid%PAGE_BLOCK==0:
-    #             save_block(pid, fan_uids, info_file_path, "fan")
-    #
-    #     else:
-    #         # when continuous fault time more than max fault tolerant time, end loop
-    #         fault_time += 1
-    #         if fault_time > FAULT_TORL:
-    #             if len(fan_uids)>0:
-    #                 save_block(pid, fan_uids, info_file_path, "fan")
-    #
-    #             print("get %s fans fin. at page %d" % (uid, pid))
-    #             break
-    #         else:
-    #             time.sleep(10)
-    #
-    #     time.sleep(2)
 

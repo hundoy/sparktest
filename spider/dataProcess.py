@@ -9,7 +9,7 @@ KUSER_DATA = "kuser.txt"
 WB_DATA = "wb.txt"
 WB_DETAIL_DATA = "wb_detail.txt"
 
-BATCH = 1
+BATCH = 2
 
 def uid_format(uid):
     if isinstance(uid, long) or isinstance(uid, int):
@@ -43,8 +43,11 @@ if __name__ == "__main__":
             replys = {}
             for line in lines:
                 if line.startswith("wb_"):
-                    line_wbids = line.strip().split(":")[1].split(",")
-                    wbids+=line_wbids
+                    wbids_str = line.strip().split(":")[1].strip()
+                    if len(wbids_str)>0:
+                        line_wbids = wbids_str.split(",")
+                        if len(line_wbids)>0:
+                            wbids+=line_wbids
                 elif line.startswith("{"):
                     wbdt = json.loads(line.strip())
                     wbid = wbdt["wbid"]
@@ -55,10 +58,11 @@ if __name__ == "__main__":
 
             # write all wbids into file
             wbids = list(set(wbids))
-            wb_file_content = "\n".join(map(lambda x: "%s,%s,%d" % (x, uid, BATCH), wbids))
-            with open(OUTPUT_DIR+WB_DATA, "a") as wb_file:
-                wb_file.write(wb_file_content+"\n")
-                print("write user %s wb.txt end." % uid)
+            if len(wbids)>0:
+                wb_file_content = "\n".join(map(lambda x: "%s,%s,%d" % (x, uid, BATCH), wbids))
+                with open(OUTPUT_DIR+WB_DATA, "a") as wb_file:
+                    wb_file.write(wb_file_content+"\n")
+                    print("write user %s wb.txt end." % uid)
 
 
             # write all wb details into file
@@ -66,9 +70,16 @@ if __name__ == "__main__":
             repost_file_content = "\n".join(["%s,repost,%s,%d" % (wbid, uid_format(uid), BATCH) for wbid in reposts.keys() for uid in reposts[wbid]])
             like_file_content = "\n".join(["%s,like,%s,%d" % (wbid, uid_format(uid), BATCH) for wbid in likes.keys() for uid in likes[wbid]])
             reply_file_content = "\n".join(["%s,reply,%s,%d" % (wbid, uid_format(uid), BATCH) for wbid in replys.keys() for uid in replys[wbid]])
-            with open(OUTPUT_DIR+WB_DETAIL_DATA, "a") as wb_detail_file:
-                wb_detail_file.write("%s\n%s\n%s\n%s\n" % (comment_file_content, repost_file_content, like_file_content, reply_file_content))
-                print("write user %s wb_detail.txt end." % uid)
+            file_content = ""
+            if len(comments)>0: file_content+=comment_file_content+"\n"
+            if len(reposts)>0: file_content+=repost_file_content+"\n"
+            if len(likes)>0: file_content+=like_file_content+"\n"
+            if len(replys)>0: file_content+=reply_file_content+"\n"
+
+            if len(file_content)>0:
+                with open(OUTPUT_DIR+WB_DETAIL_DATA, "a") as wb_detail_file:
+                    wb_detail_file.write(file_content)
+                    print("write user %s wb_detail.txt end." % uid)
 
     kuser_file_content = "\n".join(map(lambda j: "%s,%s,%d" % (j["uid"], j["nick_name"], BATCH), kusers))
     with open(OUTPUT_DIR + KUSER_DATA, "w") as kuser_file:

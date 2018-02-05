@@ -1,0 +1,6 @@
+uid:1849143124
+nick_name:iyorny
+wb_1:4167514449990637,4157358793511310,4151296249832653
+{"comment": [], "reply": [], "wbid": "4167514449990637", "like": [], "repost": []}
+{"comment": [], "reply": [], "wbid": "4157358793511310", "like": [], "repost": []}
+{"comment": [], "reply": [], "wbid": "4151296249832653", "like": [], "repost": []}

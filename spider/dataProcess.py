@@ -9,7 +9,7 @@ KUSER_DATA = "kuser.txt"
 WB_DATA = "wb.txt"
 WB_DETAIL_DATA = "wb_detail.txt"
 
-BATCH = 2
+BATCH = 3
 
 def uid_format(uid):
     if isinstance(uid, long) or isinstance(uid, int):
@@ -30,11 +30,10 @@ if __name__ == "__main__":
             lines = info_file.readlines()
 
             # get uid
-            uid = lines[0].split(":")[1].strip()
-            nick_name = lines[1].split(":")[1].strip()
-            kuser = {"uid":uid, "nick_name":nick_name}
-            kusers.append(kuser)
-
+            # uid = lines[0].split(":")[1].strip()
+            # nick_name = lines[1].split(":")[1].strip()
+            uid = 0
+            nick_name = ""
             # get all wbids and detail data
             wbids = []
             comments = {}
@@ -42,7 +41,11 @@ if __name__ == "__main__":
             likes = {}
             replys = {}
             for line in lines:
-                if line.startswith("wb_"):
+                if line.startswith("uid:"):
+                    uid = line.split(":")[1].strip()
+                elif line.startswith("nick_name:"):
+                    nick_name = line.split(":")[1].strip()
+                elif line.startswith("wb_"):
                     wbids_str = line.strip().split(":")[1].strip()
                     if len(wbids_str)>0:
                         line_wbids = wbids_str.split(",")
@@ -51,10 +54,17 @@ if __name__ == "__main__":
                 elif line.startswith("{"):
                     wbdt = json.loads(line.strip())
                     wbid = wbdt["wbid"]
-                    comments[wbid] = wbdt["comment"]
-                    reposts[wbid] = wbdt["repost"]
-                    likes[wbid] = wbdt["like"]
-                    replys[wbid] = wbdt["reply"]
+                    if len(wbdt["comment"])>0 : comments[wbid] = wbdt["comment"]
+                    if len(wbdt["repost"]) > 0: reposts[wbid] = wbdt["repost"]
+                    if len(wbdt["like"]) > 0: likes[wbid] = wbdt["like"]
+                    if len(wbdt["reply"]) > 0: replys[wbid] = wbdt["reply"]
+
+            if uid==0 or len(nick_name.strip())==0:
+                print("[WARN]%s file error, uid or nick_name miss!" % info)
+                continue
+            else:
+                kuser = {"uid": uid, "nick_name": nick_name}
+                kusers.append(kuser)
 
             # write all wbids into file
             wbids = list(set(wbids))

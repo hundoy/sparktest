@@ -41,12 +41,48 @@ select node2 as uid from links
 ) tmp
 ;
 
+-- BASE get nodes and links. 222 data.
 select 
 node1, node2, u1.nick_name as name1, u2.nick_name as name2, score 
 from links l
 left join kuser u1 on l.node1=u1.uid
 left join kuser u2 on l.node2=u2.uid
+where score>=15
 order by score desc;
 
+select 
+node1, node2, u1.nick_name as name1, u2.nick_name as name2, score, 0.01385*score-0.1077 as strengthd
+from links l
+join kuser u1 on l.node1=u1.uid
+join kuser u2 on l.node2=u2.uid
+where score>=15
+order by score desc;
 
+-- analyze 
+-- avg = 17
+select avg(score)
+from links;
+
+select
+sum(case score between 0 and 4 when true then 1 else 0 end) as cnt_0_4,
+sum(case score between 5 and 9 when true then 1 else 0 end) as cnt_5_9,
+sum(case score between 10 and 10 when true then 1 else 0 end) as cnt_10,
+sum(case score between 11 and 14 when true then 1 else 0 end) as cnt_11_14,
+sum(case score between 15 and 19 when true then 1 else 0 end) as cnt_15_19,
+sum(case score between 20 and 39 when true then 1 else 0 end) as cnt_20_39,
+sum(case score between 40 and 59 when true then 1 else 0 end) as cnt_40_59,
+sum(case score between 60 and 79 when true then 1 else 0 end) as cnt_60_79
+from links
+
+
+
+-- missing persons
+select 
+node1, node2, u1.nick_name as name1, u2.nick_name as name2, score 
+from links l
+left join kuser u1 on l.node1=u1.uid
+left join kuser u2 on l.node2=u2.uid
+where score>=15
+and u1.nick_name is null or u2.nick_name is null
+order by score desc;
 

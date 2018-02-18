@@ -1,9 +1,0 @@
-uid:6330224585
-nick_name:CumpotRun
-wb_1:4173740374017261,4168876159546544
-wb_2:4165696852025822,4163743111830567,4135147580399151
-{"comment": [], "reply": [], "wbid": "4173740374017261", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4168876159546544", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4165696852025822", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4163743111830567", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4135147580399151", "like": [], "repost": []}

@@ -3,13 +3,14 @@
 import json
 import os
 
-INFO_DIR = "rs/infos/"
+dir_fix = "_5"
+INFO_DIR = "rs/infos%s/" % dir_fix
 OUTPUT_DIR = "rs/data/"
-KUSER_DATA = "kuser.txt"
-WB_DATA = "wb.txt"
-WB_DETAIL_DATA = "wb_detail.txt"
+KUSER_DATA = "kuser%s.txt" % dir_fix
+WB_DATA = "wb%s.txt" % dir_fix
+WB_DETAIL_DATA = "wb_detail%s.txt" % dir_fix
 
-BATCH = 3
+BATCH = 5
 
 def uid_format(uid):
     if isinstance(uid, long) or isinstance(uid, int):

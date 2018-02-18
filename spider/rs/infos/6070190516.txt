@@ -1,5 +1,0 @@
-uid:6070190516
-nick_name:secvero_j
-wb_5:4157744006992868,4157619431893820
-{"comment": [], "reply": [], "wbid": "4157744006992868", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4157619431893820", "like": [], "repost": []}

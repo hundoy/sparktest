@@ -1,7 +1,0 @@
-uid:5718565150
-nick_name:bixxhfxxker
-wb_4:4180827166099659
-wb_8:4157282437132202,4157281664759836
-{"comment": [], "reply": [], "wbid": "4180827166099659", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4157282437132202", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4157281664759836", "like": [], "repost": []}

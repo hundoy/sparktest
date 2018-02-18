@@ -1,5 +1,0 @@
-uid:5647622685
-nick_name:luckyfreak
-wb_1:4174136001449635,4137873706520757
-{"comment": [], "reply": [], "wbid": "4174136001449635", "like": [], "repost": []}
-{"comment": [], "reply": [], "wbid": "4137873706520757", "like": [], "repost": []}

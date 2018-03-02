@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 if __name__ == "__main__":
-    img_dir = "rs/heads_add/"
+    img_dir = "rs/heads/"
     output_dir = "rs/heads_small/"
 
     for img in os.listdir(img_dir):

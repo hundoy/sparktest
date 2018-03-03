@@ -289,15 +289,8 @@ base_dir = "rs/"
 head_dir = base_dir + "heads/"
 info_dir = base_dir + "infos/"
 
-cookies = {
-    "hym_1" : "_T_WM=5b29b2b5ac4e0cd916afe95ff53071fb; WEIBOCN_WM=3349; SUB=_2A253dT_8DeThGeRG6VcW-S3MzT-IHXVUlkG0rDV6PUJbkdANLUvskW1NTczUO5hmg_lca0Wv4_Gvo-xSGMy75rh7; SUHB=0C1SBKT8wjOmC-; SCF=AoKIKWc0WuVrJ7nK1RhDWYVJpJc7rQPjMniq27b9wb567rl1WfiTK12Iob_Cck1MvOYR7TQAxzLEsZTpdFqXhfU.; SSOLoginState=1517375404",
-    "hym_2" : "ALF=1519909430; SCF=Ag7WAWXq6Zx_fi-6imcy2besbl_eO4pJnIOFELxCLWlV_5Q8_9OuNpb9w4wkaN53s_9s0zr-YZebui3W0dOUW2E.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhvQRSX9UM3aV-rOEsh7Dph5JpX5K-hUgL.FozReo-N1Ke7Soe2dJLoIpYLxKnL12BLBoMLxKBLB.eL122LxKqL1KnL12HkeKn4; SUB=_2A253dA1RDeThGeRG6VcW-S3MzT-IHXVUlpMZrDV6PUJbkdANLXHmkW1NTczUO0H0LINW09hWYCnFL_w_Dqk_ZmOI; SUHB=0V51bfV43P_0rp; SSOLoginState=1517321489",
-    "stroll_1" : "SUB=_2A253cSIWDeRhGeBN71cR8i_FyDiIHXVUmk5erDV6PUJbkdAKLRnQkW1NRHiVFAL5XNHaztZsMwRDLKdUKOotj_wH; SUHB=0A0JTQw7t6SQjn; SCF=AuLpN7MNxHgAywvszhkNaixwl_PKm8JPrCgU-h13Db0pa6LJhF0acN83R0Y0FoCJSw_X90kTpCILbiv-HHD3opk.; SSOLoginState=1517638214",
-    "stroll_2" : "SUB=_2A253cByZDeRhGeBN7FoW8izJwj-IHXVUmqTRrDV6PUJbkdAKLXfxkW1NRAg6AV1xpazjzsEXzqeBNC-vbMYOc-Mp; SUHB=0idrtYw_F0TfjD; SCF=AhqZzDu_u-it2-zv1LS86aQ4BScyOdM2IqMzETXrra5zH9KlagYYgex8lBMWr0tM2wCY_QYtIHeif64-fhRDrhA.; SSOLoginState=1517579465; _T_WM=4ff0cb17ea9f56697eb82486a2fc5f7d; M_WEIBOCN_PARAMS=uicode%3D20000174"
-}
 
-# cookie = {"Cookie": "ALF=1519909430; SCF=Ag7WAWXq6Zx_fi-6imcy2besbl_eO4pJnIOFELxCLWlV_5Q8_9OuNpb9w4wkaN53s_9s0zr-YZebui3W0dOUW2E.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhvQRSX9UM3aV-rOEsh7Dph5JpX5K-hUgL.FozReo-N1Ke7Soe2dJLoIpYLxKnL12BLBoMLxKBLB.eL122LxKqL1KnL12HkeKn4; SUB=_2A253dA1RDeThGeRG6VcW-S3MzT-IHXVUlpMZrDV6PUJbkdANLXHmkW1NTczUO0H0LINW09hWYCnFL_w_Dqk_ZmOI; SUHB=0V51bfV43P_0rp; SSOLoginState=1517321489"}  # 将your cookie替换成自己的cookie
-cookie = {"Cookie": cookies["hym_1"]}  # 将your cookie替换成自己的cookie
+cookie = ""  # 将your cookie替换成自己的cookie
 
 if __name__ == "__main__":
     # choose one user

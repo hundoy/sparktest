@@ -7,9 +7,9 @@ select count(1),province  from access_log group by province order by count(1) de
 select count(distinct ip),province from access_log group by province order by count(distinct ip) desc;
 
 -- 省市PV
-select count(1),province,city from access_log group by province,city order by count(1) desc;
+select count(1),province,city from access_log where country='中国' and city is not null group by province,city order by count(1) desc;
 -- 省市UV
-select count(distinct ip),province,city from access_log group by province,city order by count(distinct ip) desc;
+select count(distinct ip),province,city from access_log where country='中国' and city is not null group by province,city order by count(distinct ip) desc;
 
 -- 省市PV  国外
 select count(1),country from access_log 

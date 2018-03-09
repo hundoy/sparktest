@@ -12,9 +12,16 @@ import time
 # sys.path.append('ip2region-master/binding/python')
 from ip2Region import Ip2Region
 
-def getiploc(ip):
+def getiploc(ip, rc):
+    if rc>MAX_RETRY:
+        print("ip %s retry reach the limit!")
+        return {}
+
     url = "https://freeapi.ipip.net/%s" % ip
     str = requests.get(url).content
+    if str.find("403")>-1:
+        time.sleep(5)
+        return getiploc(ip, rc+1)
     arr = str.split(",")
     return {"country":arr[0].replace("\"","").replace("[",""),"province":arr[1].replace("\"", ""), "city":arr[2].replace("\"", "")}
     # j = json.loads(str)
@@ -30,16 +37,17 @@ def getiploc(ip):
 
 if __name__=="__main__":
 
-
+    retry_cnt = 0
+    MAX_RETRY = 5
 
     # print res
     log_dir = "logdata/"
-    paths = ["display_detail_access.log", "nodata_access.log", "display_access.log"]
-    out_path = "rs_data.txt"
+    paths = ["acc_dis.log", "acc_disd.log", "acc_no.log"]
+    out_path = "rs_data_20180306.txt"
     before_time_format = "%d/%b/%Y:%H:%M:%S"
     after_time_format = "%Y-%m-%d %H:%M:%S"
     header = "uid,page,ip,country,province,city,access_time"
-    block_size = 100
+    block_size = 10
     lines = []
 
     dbFile = "ip2region-master/data/ip2region.db"
@@ -99,10 +107,20 @@ if __name__=="__main__":
                 province = str(rarr[2])
                 city = str(rarr[3])
                 if province=="0" or city=="0":
-                    data = getiploc(ip)
-                    country = data["country"]
-                    province = data["province"]
-                    city = data["city"]
+                    data = getiploc(ip, retry_cnt)
+                    if data.has_key("country"):
+                        country = data["country"]
+                        province = data["province"]
+                        city = data["city"]
+                    else:
+                        province = province.decode("utf-8")
+                        city = city.decode("utf-8")
+                        if province.endswith(u"省") or province.endswith(u"市"):
+                            province = province[0:-1]
+                        if city.endswith(u"省") or city.endswith(u"市"):
+                            city = city[0:-1]
+                        province = province.encode("utf-8")
+                        city = city.encode("utf-8")
                 else:
                     province = province.decode("utf-8")
                     city = city.decode("utf-8")
